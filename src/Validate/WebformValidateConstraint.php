@@ -77,12 +77,15 @@ class WebformValidateConstraint {
   public static function validateFrontUniqueComponent(array &$element, FormStateInterface $formState, array &$form): void {
     $webformKey = $element['#webform_key'];
     $uniqueComponents = $element['#unique_field_value_components'];
+    $ignoreBlank = (bool) $element['#unique_field_values_ignore_blank'];
     $comparedValues[$webformKey] = $formState->getValue($webformKey);
     $submittedValues = $formState->cleanValues()->getValues();
     // Create an array of the submitted values on all form elements we need to compare.
     foreach ($uniqueComponents as $key => $value) {
       if ($value) {
-        $comparedValues[$key] = $submittedValues[$key];
+        if (!$ignoreBlank || $submittedValues[$key]) {
+          $comparedValues[$key] = $submittedValues[$key];
+        }
       }
     }
     // Find duplicates.

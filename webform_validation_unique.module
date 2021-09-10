@@ -90,6 +90,18 @@ function webform_validation_unique_form_webform_ui_element_form_alter(&$form, Fo
     '#parents' => ['properties', 'unique_field_values'],
     '#default_value' => $customProperties['unique_field_values'] ?? NULL,
   ];
+  $form['properties']['extra_validation']['unique_field_values_ignore_blank'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Ignore blank values'),
+    '#description' => t('Check this box to ignore blank values when considering duplicates.'),
+    '#parents' => ['properties', 'unique_field_values_ignore_blank'],
+    '#default_value' => $customProperties['unique_field_values_ignore_blank'] ?? NULL,
+    '#states' => [
+      'visible' => [
+        ':input[name="properties[unique_field_values]"]' => ['checked' => TRUE],
+      ],
+    ],
+  ];
   $form['properties']['extra_validation']['unique_field_values_components'] = [
     '#type' => 'checkboxes',
     '#options' => $components,
