@@ -1,0 +1,5 @@
+name: 'webform_validation_unique'
+type: module
+description: 'Webform Validation - Unique Values'
+core: 8.x
+package: 'Custom'

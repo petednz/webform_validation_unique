@@ -1,0 +1,13 @@
+{
+    "name": "webform_validation_unique",
+    "type": "drupal-module",
+    "description": "Webform Validation - Unique Values",
+    "keywords": [
+    ],
+    "homepage": "https://www.drupal.org/project/webform_validation_unique",
+    "minimum-stability": "dev",
+    "support": {
+        "issues": "https://www.drupal.org/project/issues/webform_validation_unique",
+        "source": "http://cgit.drupalcode.org/webform_validation_unique",
+    },
+}

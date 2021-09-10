@@ -1,0 +1,125 @@
+<?php
+
+/**
+ * @file
+ * Contains webform_validation_unique.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_help().
+ */
+function webform_validation_unique_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the webform_validation_unique module.
+    case 'help.page.webform_validation_unique':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Webform Validation - Unique Values') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function webform_validation_unique_form_webform_ui_element_form_alter(&$form, FormStateInterface $form_state, $form_id): void {
+  // Define default custom properties.
+  $defaultCustomProperties = [
+    'equal' => FALSE,
+  ];
+  $form_state->set('default_properties', $form_state->get('default_properties') + $defaultCustomProperties);
+
+  // Retrieve the values from the custom properties element's default value.
+  // @see \Drupal\webform\Plugin\WebformElementBase::buildConfigurationForm
+  $customProperties = $form_state->get('element_properties');
+  // Finally, append the default custom property values.
+  $customProperties += $defaultCustomProperties;
+  $defaultKey = $form['properties']['element']['key']['#default_value'];
+  $formObject = $form_state->getFormObject();
+  $webform = $formObject->getWebform();
+  $allowedTypes = [
+    'date',
+    'email',
+    'hidden',
+    'number',
+    'select',
+    'textarea',
+    'textfield',
+    'webform_time',
+  ];
+  $compareAllowedTypes = [
+    'date' => 'date',
+    'number' => 'number',
+    'webform_time' => 'webform_time',
+  ];
+  $access = $compareAccess = FALSE;
+  if (in_array($customProperties['type'], $allowedTypes)) {
+    $access = TRUE;
+  }
+
+  $elements = $webform->getElementsInitializedAndFlattened();
+  $components = $compareComponents = [];
+  foreach ($elements as $elementKey => &$element) {
+    if (in_array($element['#type'], $allowedTypes)) {
+      if ($elementKey != $defaultKey) {
+        $components[$elementKey] = $element['#admin_title'];
+      }
+    }
+    else {
+      unset($components[$elementKey]);
+    }
+    if (in_array($element['#type'], $compareAllowedTypes)) {
+      if ($elementKey != $defaultKey && $element['#type'] == $customProperties['type']) {
+        $compareComponents[$elementKey] = $element['#admin_title'];
+      }
+    }
+    else {
+      unset($compareComponents[$elementKey]);
+    }
+  }
+
+  $form['properties']['extra_validation']['unique_field_values'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Unique values'),
+    '#description' => t('Verifies that none of the specified components contain the same value as another selected component in this submission. (To check that values are unique between submissions, use the "unique" validation option above.) If all components are of type email, they will get case-insensitive comparison.'),
+    '#parents' => ['properties', 'unique_field_values'],
+    '#default_value' => $customProperties['unique_field_values'] ?? NULL,
+  ];
+  $form['properties']['extra_validation']['unique_field_values_components'] = [
+    '#type' => 'checkboxes',
+    '#options' => $components,
+    '#title' => t('Unique Value Components'),
+    '#description' => t('Select the components to be validated by this validation rule'),
+    '#parents' => ['properties', 'unique_field_value_components'],
+    '#default_value' => $customProperties['unique_field_value_components'] ?? NULL,
+    '#states' => [
+      'visible' => [
+        ':input[name="properties[unique_field_values]"]' => ['checked' => TRUE],
+      ],
+    ],
+  ];
+  $form['#validate'][] = 'Drupal\webform_validation_unique\Validate\WebformValidateConstraint::validateBackendComponents';
+}
+
+
+/**
+ * Implements hook_webform_submission_form_alter().
+ */
+function webform_validation_unique_webform_submission_form_alter(array &$form, FormStateInterface $form_state, $form_id): void {
+  $form['elements']['page1']['mark1']['#access'] = FALSE;
+  $form['#validate'][] = [
+    'Drupal\webform_validation_unique\Validate\WebformValidateConstraint',
+    'validate',
+  ];
+  if (!empty($form['actions']['wizard_prev']['#submit'])) {
+    $form['actions']['wizard_prev']['#submit'][] = [
+      'Drupal\webform_validation_unique\Validate\WebformValidateConstraint',
+      'formSubmitPervious',
+    ];
+  }
+}
